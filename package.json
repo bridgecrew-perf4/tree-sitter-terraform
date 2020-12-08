@@ -1,18 +1,40 @@
 {
   "name": "tree-sitter-terraform",
   "version": "0.1.0",
-  "description": "Tree sitter parser for Terraform",
+  "description": "Terraform grammar for tree-sitter",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "keywords": [
+    "parser",
+    "lexer",
+    "terraform"
+  ],
+  "author": "Marek Maksimczyk",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mandos/tree-sitter-terraform/issues"
   },
-  "author": "",
-  "license": "ISC",
+  "homepage": "https://github.com/mandos/tree-sitter-terraform#readme",
   "dependencies": {
-    "fsmonitor": "^0.2.4",
     "nan": "^2.14.2"
   },
   "devDependencies": {
+    "fsmonitor": "^0.2.4",
     "tree-sitter-cli": "^0.17.3"
-  }
+  },
+  "scripts": {
+    "build": "tree-sitter generate && node-gyp build",
+    "test": "tree-sitter test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mandos/tree-sitter-terraform.git"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.terraform",
+      "file-types": [
+        "tf"
+      ]
+    }
+  ]
 }
