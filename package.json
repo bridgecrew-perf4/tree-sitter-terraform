@@ -1,0 +1,18 @@
+{
+  "name": "tree-sitter-terraform",
+  "version": "0.1.0",
+  "description": "Tree sitter parser for Terraform",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "fsmonitor": "^0.2.4",
+    "nan": "^2.14.2"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.17.3"
+  }
+}
