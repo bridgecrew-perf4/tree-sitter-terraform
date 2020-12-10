@@ -2,11 +2,8 @@ module.exports = grammar({
   name: 'terraform',
 
   extras: $ => [
-    $.comment,
     /[\s\uFEFF\u2060\u200B\u00A0]/
   ],
-
-  word: $ => $.word,
 
   rules: {
     source_file: $ => optional(
@@ -14,102 +11,108 @@ module.exports = grammar({
     ),
 
     _statement: $ => choice(
-      $.local_declarations
+      $.variable_declaration,
     ),
 
-    local_declarations: $ => seq(
-      'locals',
-      '{',
-      optional(
-        repeat($.assignment_expression)
-      ),
-      '}'
+    type: $ => choice(
+      $._primitive_type,
+      $._list_type
     ),
 
-    assignment_expression: $ => seq(
-      field('left', $.variable_name),
+    _primitive_type: $ => choice(
+      'bool',
+      'number',
+      'string',
+    ),
+
+    _list_type: $ => seq( 'list', '[', $._primitive_type, ']'
+    ),
+
+    expression_statement: $ => choice(
+      $.assigment_expression,
+    ),
+
+    assigment_expression: $ => seq(
+      field('left', $.argument_name),
       '=',
-      field('right', $._expression)
+      field('right', $._expresion),
     ),
 
-    variable_name: $ => $._identifier,
-
-    _expression: $ => choice(
-      $._type,
+    _expresion: $ => choice(
+      $.type,
+      $.bool_literal,
+      $.string_literal,
+      $.number_literal
     ),
 
-    _type: $ => choice(
-      $.number,
-      $.string,
-      $.bool,
-      $.null,
-      $.list,
-      $.map,
-      $.null,
-    ),
-
-
-    list: $ => seq( '[', commaSep($._type), optional(','), ']'),
-    map: $ => seq( '{', repeat($.assignment_expression), '}'),
-    number: $ => /[\+\-]?\d+(\.\d+)?/,
-    string: $ => choice($._single_quote_string, $._double_quote_string),
-    null: $ => 'null',
-    _double_quote_string: $ => seq(
-      '"',
-      /(\w|\d| )*/,
-      '"',
-    ),
-    _single_quote_string: $ => seq(
-      '\'',
-      /(\w|\d| )*/,
-      '\'',
-    ),
-    bool: $ => choice('true', 'false'),
-    null: $ => 'null',
-
-
-    _call: $ => choice($.module),
-
-    module: $ => seq(
-      'module',
-      $.name,
-      $.block,
+    variable_declaration: $ => seq(
+      'variable',
+      field('name', $.variable_name),
+      '{',
+      repeat(choice($.assigment_expression, $.block)),
+      '}'
     ),
 
     block: $ => seq(
-      '{',
-       repeat($.argument),
-      '}'
-    ),
-
-    argument: $ => seq(
-      $.argument_name,
-      '=',
-      $.expression
+      $.name,
+      "{",
+      optional(repeat1($.assigment_expression)),
+      "}"
     ),
 
     argument_name: $ => $._identifier,
 
-    expression: $ => choice(
-      $._module_output_value,
-      $.string,
+    number_literal: $ => /[\d]+(\.\d*)?/,
+
+    string_literal: $ => seq(
+      '"',
+      repeat(choice($.interpolation, $.escape_sequence, $._not_escape_sequence, $._string_content)),
+      '"',
     ),
 
-    comment: $ => token(seq(
-      choice('#', '//'), /.*(\n)*/)),
-
-    _module_output_value: $ => seq(
-      repeat($._module_output),
-      $._identifier,
+    interpolation: $ => seq(
+      '$',
+      '{',
+      '}'
     ),
 
-    _module_output: $ => seq('module.', $._identifier, '.'),
+    escape_sequence: $ => token(prec(1, seq(
+      '\\',
+      choice(
+        /u[a-fA-F\d]{4}/,
+        /U[a-fA-F\d]{8}/,
+        /['"nrt\\]/,
+      )
+    ))),
 
-    name: $ => seq('"', $._identifier, '"'),
-    _identifier: $ => /[a-zA-Z_\-][a-zA-Z0-9_\-]+/,
-    word: $ => /[a-z_]+/,
+    _not_escape_sequence: $ => '\\',
+
+    _string_content: $ => /[\w\d]/,
+
+    bool_literal: $ => choice("true", "false"),
+
+    variable_name: $ => $._quoted_name,
+
+    block_name: $ => $.name,
+
+    _quoted_name: $ => seq('"', $.name, '"'),
+
+    name: $ => $._identifier,
+
+    _identifier: $ => /[a-zA-Z_][a-zA-Z0-9_\-]*/,
+
   }
 })
+
+function keyword(word, aliasAsWord = true) {
+  let pattern = ''
+  for (const letter of word) {
+    pattern += `[${letter}${letter.toLocaleUpperCase()}]`
+  }
+  let result = new RegExp(pattern)
+  if (aliasAsWord) result = alias(result, word)
+  return result
+}
 
 function commaSep1 (rule) {
   return seq(rule, repeat(seq(',', rule)));
